@@ -667,4 +667,94 @@ public class GfxExportService : IGfxExportService
         // Also replace any multiple underscores with single
         return Regex.Replace(sanitized, @"_+", "_").Trim('_');
     }
+    
+    /// <summary>
+    /// Exports all graphics from all loaded pub records to organized BMP folders.
+    /// Each item/NPC/spell gets its own subfolder.
+    /// </summary>
+    public async Task<GfxExportResult> ExportAllGraphicsAsync(
+        string outputFolder, 
+        IEnumerable<ItemRecordWrapper> items,
+        IEnumerable<NpcRecordWrapper> npcs,
+        IEnumerable<SpellRecordWrapper> spells,
+        IProgress<(string status, int current, int total)>? progress = null)
+    {
+        return await Task.Run(async () =>
+        {
+            try
+            {
+                FileLogger.LogInfo($"BULK EXPORT: Starting export to {outputFolder}");
+                
+                int totalExported = 0;
+                var itemsList = items.Where(i => i.GraphicId > 0 || i.Spec1 > 0).ToList();
+                var npcsList = npcs.Where(n => n.GraphicId > 0).ToList();
+                var spellsList = spells.Where(s => s.GraphicId > 0 || s.IconId > 0).ToList();
+                
+                int totalRecords = itemsList.Count + npcsList.Count + spellsList.Count;
+                int currentRecord = 0;
+                
+                FileLogger.LogInfo($"BULK EXPORT: Found {itemsList.Count} items, {npcsList.Count} NPCs, {spellsList.Count} spells to export");
+                
+                // Create main category folders
+                var itemsFolder = Path.Combine(outputFolder, "Items");
+                var npcsFolder = Path.Combine(outputFolder, "NPCs");
+                var spellsFolder = Path.Combine(outputFolder, "Spells");
+                
+                Directory.CreateDirectory(itemsFolder);
+                Directory.CreateDirectory(npcsFolder);
+                Directory.CreateDirectory(spellsFolder);
+                
+                // Export all items
+                FileLogger.LogInfo($"BULK EXPORT: Exporting {itemsList.Count} items...");
+                foreach (var item in itemsList)
+                {
+                    currentRecord++;
+                    progress?.Report(($"Item: {item.Name}", currentRecord, totalRecords));
+                    
+                    var result = await ExportItemGraphicsAsync(item, itemsFolder);
+                    if (result.Success)
+                    {
+                        totalExported += result.FilesExported;
+                    }
+                }
+                
+                // Export all NPCs
+                FileLogger.LogInfo($"BULK EXPORT: Exporting {npcsList.Count} NPCs...");
+                foreach (var npc in npcsList)
+                {
+                    currentRecord++;
+                    progress?.Report(($"NPC: {npc.Name}", currentRecord, totalRecords));
+                    
+                    var result = await ExportNpcGraphicsAsync(npc, npcsFolder);
+                    if (result.Success)
+                    {
+                        totalExported += result.FilesExported;
+                    }
+                }
+                
+                // Export all spells
+                FileLogger.LogInfo($"BULK EXPORT: Exporting {spellsList.Count} spells...");
+                foreach (var spell in spellsList)
+                {
+                    currentRecord++;
+                    progress?.Report(($"Spell: {spell.Name}", currentRecord, totalRecords));
+                    
+                    var result = await ExportSpellGraphicsAsync(spell, spellsFolder);
+                    if (result.Success)
+                    {
+                        totalExported += result.FilesExported;
+                    }
+                }
+                
+                FileLogger.LogInfo($"BULK EXPORT: Completed - exported {totalExported} files");
+                
+                return new GfxExportResult(true, totalExported, Array.Empty<string>(), null);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogError($"BULK EXPORT: Exception - {ex}");
+                return new GfxExportResult(false, 0, Array.Empty<string>(), ex.Message);
+            }
+        });
+    }
 }

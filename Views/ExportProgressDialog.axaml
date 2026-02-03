@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SOE_PubEditor.Views.ExportProgressDialog"
+        Title="Exporting Graphics..."
+        Width="450"
+        Height="180"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="BorderOnly">
+    
+    <Border Background="#1E1E1E" Padding="20">
+        <StackPanel Spacing="15">
+            <!-- Title -->
+            <TextBlock Text="Bulk GFX Export"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="#FFFFFF"/>
+            
+            <!-- Current item being exported -->
+            <TextBlock x:Name="StatusTextBlock"
+                       Text="Preparing export..."
+                       Foreground="#CCCCCC"
+                       TextTrimming="CharacterEllipsis"/>
+            
+            <!-- Progress bar -->
+            <ProgressBar x:Name="ExportProgressBar"
+                         Minimum="0"
+                         Maximum="100"
+                         Value="0"
+                         Height="20"
+                         Foreground="#4CAF50"/>
+            
+            <!-- Progress percentage and count -->
+            <Grid>
+                <TextBlock x:Name="PercentageText"
+                           Text="0%"
+                           HorizontalAlignment="Left"
+                           Foreground="#888888"/>
+                <TextBlock x:Name="CountText"
+                           Text="0 / 0"
+                           HorizontalAlignment="Right"
+                           Foreground="#888888"/>
+            </Grid>
+            
+            <!-- Cancel button -->
+            <Button x:Name="CancelButton"
+                    Content="Cancel"
+                    HorizontalAlignment="Center"
+                    Width="100"
+                    Click="OnCancelClick"/>
+        </StackPanel>
+    </Border>
+</Window>

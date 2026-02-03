@@ -189,6 +189,32 @@ public class ItemRecordWrapper : INotifyPropertyChanged
         set => Record.Spec3 = value;
     }
     
+    /// <summary>
+    /// Returns true if this equipment is for female characters.
+    /// Based on Spec2 value (0 = female, 1 = male) or name patterns.
+    /// </summary>
+    public bool IsFemaleEquipment
+    {
+        get
+        {
+            // Spec2 == 0 indicates female equipment, Spec2 == 1 indicates male
+            if (Spec2 == 0) return true;
+            if (Spec2 == 1) return false;
+            
+            // Also check name patterns as fallback for items without Spec2 set
+            var name = Name ?? "";
+            return name.Contains("(F)") || 
+                   name.Contains("Female") || 
+                   name.Contains(" F)") ||
+                   name.EndsWith(" F");
+        }
+    }
+    
+    /// <summary>
+    /// Gets a display string for the equipment gender.
+    /// </summary>
+    public string GenderDisplay => IsFemaleEquipment ? "Female" : "Male";
+    
     public ItemRecordWrapper(EifRecord record, int id)
     {
         Record = record;

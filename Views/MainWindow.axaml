@@ -23,6 +23,8 @@
                 <Separator/>
                 <MenuItem Header="_Save All" Command="{Binding SaveAllCommand}" InputGesture="Ctrl+S"/>
                 <Separator/>
+                <MenuItem Header="Export All _GFX to BMP..." Click="OnExportAllGfxClick"/>
+                <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick"/>
             </MenuItem>
         </Menu>
@@ -143,7 +145,15 @@
                                     
                                     <!-- Equipment Preview (only visible for visual equipment types: armor, weapon, hat, boots, shield, wings) -->
                                     <StackPanel IsVisible="{Binding ShowEquipmentPreview}">
-                                        <TextBlock Text="Equipment GFX" FontSize="11" Classes="Label" Margin="0,0,0,4"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+                                            <TextBlock Text="Equipment GFX" FontSize="11" Classes="Label"/>
+                                            <ComboBox SelectedIndex="{Binding SelectedItem.Spec2}" 
+                                                      FontSize="11" Padding="4,2" MinWidth="70"
+                                                      ToolTip.Tip="Gender of this equipment - determines which GFX file to use">
+                                                <ComboBoxItem Content="Female"/>
+                                                <ComboBoxItem Content="Male"/>
+                                            </ComboBox>
+                                        </StackPanel>
                                         <Button Click="OnEquipmentPreviewClick" Padding="0" HorizontalAlignment="Left"
                                                 ToolTip.Tip="Click to choose equipment/doll graphic">
                                             <Border Classes="GfxPreview" Height="80" Width="80">

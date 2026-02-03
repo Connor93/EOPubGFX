@@ -393,7 +393,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (_openGraphicPickerFunc != null && SelectedItem != null && IsItemEquipmentType(SelectedItem.Type))
         {
-            var gfxType = GetEquipmentGfxType(SelectedItem.Type);
+            var gfxType = GetEquipmentGfxType(SelectedItem.Type, SelectedItem.IsFemaleEquipment);
             var newId = await _openGraphicPickerFunc(gfxType, SelectedItem.Spec1 > 0 ? SelectedItem.Spec1 : null);
             if (newId.HasValue)
             {
@@ -521,9 +521,9 @@ public partial class MainWindowViewModel : ViewModelBase
             // Load equipment preview if this is an equipment type with Spec1 set
             if (IsItemEquipmentType(newValue.Type) && newValue.Spec1 > 0)
             {
-                var gfxType = GetEquipmentGfxType(newValue.Type);
+                var gfxType = GetEquipmentGfxType(newValue.Type, newValue.IsFemaleEquipment);
                 EquipmentPreview = LoadEquipmentFrame(gfxType, newValue.Spec1, newValue.Type);
-                Console.WriteLine($"EquipmentPreview loaded: {EquipmentPreview != null} (Type={newValue.Type}, Spec1={newValue.Spec1})");
+                Console.WriteLine($"EquipmentPreview loaded: {EquipmentPreview != null} (Type={newValue.Type}, Spec1={newValue.Spec1}, Female={newValue.IsFemaleEquipment})");
             }
             else
             {

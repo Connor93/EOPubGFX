@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
@@ -141,6 +142,67 @@ public partial class MainWindow : Window
     private void OnExitClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         Close();
+    }
+    
+    private async void OnExportAllGfxClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+        
+        if (string.IsNullOrEmpty(vm.GfxService.GfxDirectory))
+        {
+            vm.StatusText = "Error: No GFX directory configured";
+            return;
+        }
+        
+        // Let user pick the output folder
+        var folder = await SelectExportFolderAsync("Select Output Folder for Bulk GFX Export");
+        if (folder == null) return;
+        
+        var exportService = new GfxExportService(vm.GfxService);
+        
+        // Create and show progress dialog
+        var progressDialog = new ExportProgressDialog();
+        var cts = new System.Threading.CancellationTokenSource();
+        progressDialog.SetCancellationTokenSource(cts);
+        
+        // Show dialog non-modally and run export
+        progressDialog.Show(this);
+        
+        // Update progress in dialog
+        var progress = new Progress<(string status, int current, int total)>(p =>
+        {
+            progressDialog.UpdateProgress(p.status, p.current, p.total);
+        });
+        
+        try
+        {
+            var result = await exportService.ExportAllGraphicsAsync(
+                folder, 
+                vm.Items, 
+                vm.Npcs, 
+                vm.Spells, 
+                progress);
+            
+            if (result.Success)
+            {
+                progressDialog.SetCompleted(result.FilesExported, folder);
+                vm.StatusText = $"Exported {result.FilesExported} graphics to {folder}";
+                FileLogger.LogInfo($"BULK EXPORT: Successfully exported {result.FilesExported} files to {folder}");
+            }
+            else
+            {
+                progressDialog.SetError(result.Error ?? "Unknown error");
+                vm.StatusText = $"Export failed: {result.Error}";
+                FileLogger.LogError($"BULK EXPORT ERROR: {result.Error}");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            progressDialog.SetError(ex.Message);
+            vm.StatusText = $"Export error: {ex.Message}";
+            FileLogger.LogError($"BULK EXPORT EXCEPTION: {ex}");
+        }
     }
     
     // Clear type filter handlers
