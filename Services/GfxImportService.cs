@@ -124,6 +124,14 @@ public class GfxImportService : IGfxImportService
                         var egfPath = GetOutputEgfPath(gfxType, outputGfxDirectory);
                         var bmpFiles = Directory.GetFiles(equipmentDir, "*.bmp");
                         
+                        // For weapons, also get the female weapon EGF path
+                        string? femaleWeaponEgfPath = null;
+                        if (item.Type == ItemType.Weapon)
+                        {
+                            femaleWeaponEgfPath = GetOutputEgfPath(GfxType.FemaleWeapon, outputGfxDirectory);
+                            FileLogger.LogInfo($"GFX IMPORT: Weapon import will update both gfx017 (male) and gfx018 (female)");
+                        }
+                        
                         foreach (var bmpFile in bmpFiles)
                         {
                             // Parse frame number from filename 
@@ -147,10 +155,26 @@ public class GfxImportService : IGfxImportService
                             {
                                 var resourceId = GetEquipmentResourceId(item.Type, item.Spec1, frame);
                                 FileLogger.LogInfo($"GFX IMPORT: Importing equipment frame {frame} from {fileName} to resource {resourceId}");
+                                
+                                // Import to primary GFX file
                                 if (ImportBmpToEgf(egfPath, resourceId, bmpFile))
                                     filesImported++;
                                 else
                                     errors.Add($"Failed to import equipment frame {frame}");
+                                
+                                // For weapons, also import to female weapon file
+                                if (femaleWeaponEgfPath != null)
+                                {
+                                    if (ImportBmpToEgf(femaleWeaponEgfPath, resourceId, bmpFile))
+                                    {
+                                        filesImported++;
+                                        FileLogger.LogInfo($"GFX IMPORT: Also imported weapon frame {frame} to female weapon GFX (gfx018)");
+                                    }
+                                    else
+                                    {
+                                        errors.Add($"Failed to import weapon frame {frame} to female GFX");
+                                    }
+                                }
                             }
                             else
                             {
