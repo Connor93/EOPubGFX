@@ -9,9 +9,9 @@
     <!-- Application Info -->
     <AssemblyName>SOE_PubEditor</AssemblyName>
     <Product>Shards of Eternity - Pub Editor</Product>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.2</Version>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
     <Company>Shards of Eternity</Company>
     <Authors>Shards of Eternity Team</Authors>
     <Description>Editor for Endless Online pub files (EIF, ENF, ESF, ECF) with GFX preview and export capabilities.</Description>
