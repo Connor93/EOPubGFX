@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SOE_PubEditor.ViewModels"
+        x:Class="SOE_PubEditor.Views.GraphicPickerDialog"
+        x:DataType="vm:GraphicPickerViewModel"
+        Title="{Binding Title}"
+        Width="700"
+        Height="550"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner">
+    
+    <Grid RowDefinitions="*,Auto">
+        <!-- Graphics Grid -->
+        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ListBox ItemsSource="{Binding Graphics}" 
+                     SelectedItem="{Binding SelectedGraphic}"
+                     Background="Transparent">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="80" Height="85" Margin="4" Padding="4"
+                                Background="#333" CornerRadius="4">
+                            <StackPanel>
+                                <Border Background="#222" Width="60" Height="60" 
+                                        HorizontalAlignment="Center"
+                                        ClipToBounds="True">
+                                    <Image Source="{Binding Image}" 
+                                           Stretch="Uniform"
+                                           MaxWidth="60" MaxHeight="60"/>
+                                </Border>
+                                <TextBlock Text="{Binding Id}" 
+                                           HorizontalAlignment="Center"
+                                           FontSize="11" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+        
+        <!-- Loading Indicator -->
+        <Border Grid.Row="0" Background="#80000000" 
+                IsVisible="{Binding IsLoading}"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <TextBlock Text="Loading graphics..." 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       Foreground="White" FontSize="16"/>
+        </Border>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" Margin="12">
+            <Button Content="Select" Width="80" Margin="0,0,8,0"
+                    IsEnabled="{Binding SelectedGraphic, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Click="OnSelectClick"/>
+            <Button Content="Cancel" Width="80" Click="OnCancelClick"/>
+        </StackPanel>
+    </Grid>
+</Window>

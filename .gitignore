@@ -1,0 +1,21 @@
+# Build outputs
+bin/
+obj/
+release/
+
+# IDE
+.idea/
+.vs/
+*.user
+*.suo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+
+# Published builds
+publish/

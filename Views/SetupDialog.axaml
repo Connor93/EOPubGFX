@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="250"
+        x:Class="SOE_PubEditor.Views.SetupDialog"
+        Title="Initial Setup"
+        Width="500" Height="250"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Grid.Row="0" Text="Welcome to the Pub File Editor" 
+                   FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+        
+        <TextBlock Grid.Row="2" Text="Pub Directory (contains .eif, .enf, .esf, .ecf files):" Margin="0,0,0,4"/>
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+            <TextBox Grid.Column="0" x:Name="PubDirectoryTextBox" IsReadOnly="True" Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Content="Browse..." Click="OnBrowsePubClick"/>
+        </Grid>
+        
+        <TextBlock Grid.Row="5" Text="GFX Directory (contains .egf files):" Margin="0,0,0,4"/>
+        <Grid Grid.Row="6" ColumnDefinitions="*,Auto">
+            <TextBox Grid.Column="0" x:Name="GfxDirectoryTextBox" IsReadOnly="True" Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Content="Browse..." Click="OnBrowseGfxClick"/>
+        </Grid>
+        
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" Click="OnCancelClick" Margin="0,0,8,0" Width="80"/>
+            <Button x:Name="OkButton" Content="OK" Click="OnOkClick" Width="80" IsEnabled="False"/>
+        </StackPanel>
+    </Grid>
+</Window>

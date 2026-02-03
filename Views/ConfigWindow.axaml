@@ -1,0 +1,130 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SOE_PubEditor.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="350"
+        x:Class="SOE_PubEditor.Views.ConfigWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Configuration"
+        Width="550" Height="560"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#f0f0f0"
+        Icon="/Assets/icon.png">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Application Settings" 
+                   FontSize="20" FontWeight="Bold" Margin="0,0,0,20" Foreground="#222"/>
+        
+        <!-- Settings Grid -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="16">
+                
+                <!-- Pub Directory -->
+                <Border Background="White" CornerRadius="6" Padding="12" BorderBrush="#ccc" BorderThickness="1">
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <TextBlock Text="Pub Files Directory" FontWeight="SemiBold" FontSize="14" Foreground="#1a73e8"/>
+                            <TextBlock Text="Location of your .eif, .enf, .esf, .ecf pub files" 
+                                       Foreground="#555" FontSize="12"/>
+                        </StackPanel>
+                        <TextBox Grid.Row="1" Grid.Column="0" 
+                                 Text="{Binding PubDirectory}" 
+                                 IsReadOnly="True"
+                                 Watermark="Not configured..."
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Row="1" Grid.Column="1" 
+                                Content="Browse..." 
+                                Click="OnBrowsePubClick"
+                                Width="80"/>
+                    </Grid>
+                </Border>
+                
+                <!-- GFX Directory -->
+                <Border Background="White" CornerRadius="6" Padding="12" BorderBrush="#ccc" BorderThickness="1">
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <TextBlock Text="GFX Directory" FontWeight="SemiBold" FontSize="14" Foreground="#1a73e8"/>
+                            <TextBlock Text="Location of your .egf graphics files for previews" 
+                                       Foreground="#555" FontSize="12"/>
+                        </StackPanel>
+                        <TextBox Grid.Row="1" Grid.Column="0" 
+                                 Text="{Binding GfxDirectory}" 
+                                 IsReadOnly="True"
+                                 Watermark="Not configured..."
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Row="1" Grid.Column="1" 
+                                Content="Browse..." 
+                                Click="OnBrowseGfxClick"
+                                Width="80"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Save Directory -->
+                <Border Background="White" CornerRadius="6" Padding="12" BorderBrush="#ccc" BorderThickness="1">
+                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <TextBlock Text="Save Directory" FontWeight="SemiBold" FontSize="14" Foreground="#1a73e8"/>
+                            <TextBlock Text="Where to save modified pub files (leave empty to overwrite originals)" 
+                                       Foreground="#555" FontSize="12" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <TextBox Grid.Row="1" Grid.Column="0" 
+                                 Text="{Binding SaveDirectory}" 
+                                 IsReadOnly="True"
+                                 Watermark="Same as Pub Directory..."
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Row="1" Grid.Column="1" 
+                                Content="Browse..." 
+                                Click="OnBrowseSaveClick"
+                                Width="80"/>
+                        <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                Content="Clear (Use Pub Directory)"
+                                Click="OnClearSaveClick"
+                                HorizontalAlignment="Left"
+                                Margin="0,8,0,0"
+                                Padding="8,4"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Pub Splitting -->
+                <Border Background="White" CornerRadius="6" Padding="12" BorderBrush="#ccc" BorderThickness="1">
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <TextBlock Text="Pub File Splitting" FontWeight="SemiBold" FontSize="14" Foreground="#1a73e8"/>
+                            <TextBlock Text="Split large pub files for older client compatibility (~900 entries max)" 
+                                       Foreground="#555" FontSize="12" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                            <CheckBox Content="Enable splitting" 
+                                      IsChecked="{Binding EnablePubSplitting}"
+                                      VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="Max entries per file:" VerticalAlignment="Center" Foreground="#333"/>
+                                <NumericUpDown Value="{Binding MaxEntriesPerFile}" 
+                                               Minimum="100" Maximum="10000" 
+                                               Increment="100"
+                                               Width="120"
+                                               FormatString="N0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" Spacing="8">
+            <Button Content="Reload Data" Click="OnReloadClick" Width="100"/>
+            <Button Content="Close" Click="OnCloseClick" Width="80"/>
+        </StackPanel>
+    </Grid>
+</Window>
