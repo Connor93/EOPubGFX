@@ -173,7 +173,67 @@ public partial class MainWindowViewModel : ViewModelBase
     
     private static bool IsItemEquipmentType(ItemType type) =>
         type == ItemType.Armor || type == ItemType.Weapon || 
-        type == ItemType.Hat || type == ItemType.Boots || type == ItemType.Shield;
+        type == ItemType.Hat || type == ItemType.Boots || type == ItemType.Shield ||
+        type == ItemType.Gloves || type == ItemType.Accessory || type == ItemType.Belt ||
+        type == ItemType.Necklace || type == ItemType.Ring || type == ItemType.Armlet ||
+        type == ItemType.Bracer;
+    
+    // Type-based visibility properties for item editor sections
+    public bool ShowWeaponStats => SelectedItem?.Type == ItemType.Weapon;
+    
+    public bool ShowDefenseStats => SelectedItem != null && IsDefenseEquipmentType(SelectedItem.Type);
+    
+    private static bool IsDefenseEquipmentType(ItemType type) =>
+        type == ItemType.Armor || type == ItemType.Shield || 
+        type == ItemType.Hat || type == ItemType.Boots || type == ItemType.Gloves;
+    
+    // Equipment types that need the visual GFX picker (excludes accessories like rings, bracers, etc.)
+    public bool ShowEquipmentPreview => SelectedItem != null && IsVisualEquipmentType(SelectedItem.Type);
+    
+    private static bool IsVisualEquipmentType(ItemType type) =>
+        type == ItemType.Armor || type == ItemType.Weapon || 
+        type == ItemType.Hat || type == ItemType.Boots || type == ItemType.Shield ||
+        type == ItemType.Accessory; // Wings are Accessory type with Wings subtype
+    
+    public bool ShowStatBonuses => IsEquipmentType;
+    
+    public bool ShowRequirements => IsEquipmentType;
+    
+    public bool ShowHealStats => SelectedItem?.Type == ItemType.Heal;
+    
+    public bool ShowTeleportFields => SelectedItem?.Type == ItemType.Teleport;
+    
+    public bool ShowSpellField => SelectedItem?.Type == ItemType.Reserved7; // skill book
+    
+    public bool ShowExpRewardField => SelectedItem?.Type == ItemType.ExpReward;
+    
+    public bool ShowKeyField => SelectedItem?.Type == ItemType.Key;
+    
+    public bool ShowEffectField => SelectedItem != null && 
+        (SelectedItem.Type == ItemType.Alcohol || SelectedItem.Type == ItemType.EffectPotion);
+    
+    public bool ShowHairDyeField => SelectedItem?.Type == ItemType.HairDye;
+    
+    public bool ShowCureCurseField => SelectedItem?.Type == ItemType.CureCurse;
+    
+    // Notify all visibility properties when selected item changes
+    private void NotifyItemTypeVisibilityChanged()
+    {
+        OnPropertyChanged(nameof(IsEquipmentType));
+        OnPropertyChanged(nameof(ShowEquipmentPreview));
+        OnPropertyChanged(nameof(ShowWeaponStats));
+        OnPropertyChanged(nameof(ShowDefenseStats));
+        OnPropertyChanged(nameof(ShowStatBonuses));
+        OnPropertyChanged(nameof(ShowRequirements));
+        OnPropertyChanged(nameof(ShowHealStats));
+        OnPropertyChanged(nameof(ShowTeleportFields));
+        OnPropertyChanged(nameof(ShowSpellField));
+        OnPropertyChanged(nameof(ShowExpRewardField));
+        OnPropertyChanged(nameof(ShowKeyField));
+        OnPropertyChanged(nameof(ShowEffectField));
+        OnPropertyChanged(nameof(ShowHairDyeField));
+        OnPropertyChanged(nameof(ShowCureCurseField));
+    }
     
     // Get the GFX type for equipment based on item type
     private static GfxType GetEquipmentGfxType(ItemType type, bool isFemale = false) => type switch
@@ -449,8 +509,8 @@ public partial class MainWindowViewModel : ViewModelBase
             newValue.PropertyChanged += OnSelectedItemPropertyChanged;
         }
         
-        // Update IsEquipmentType binding
-        OnPropertyChanged(nameof(IsEquipmentType));
+        // Update visibility properties for type-based field display
+        NotifyItemTypeVisibilityChanged();
         
         if (newValue != null && _gfxService.IsGfxDirectoryValid())
         {
@@ -482,8 +542,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (e.PropertyName == nameof(ItemRecordWrapper.Type))
         {
-            // Type changed, update IsEquipmentType binding
-            OnPropertyChanged(nameof(IsEquipmentType));
+            // Type changed, update all type-based visibility properties
+            NotifyItemTypeVisibilityChanged();
             
             // Also update equipment preview visibility (clear it if no longer equipment type)
             if (SelectedItem != null && !IsItemEquipmentType(SelectedItem.Type))

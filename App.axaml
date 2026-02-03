@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SOE_PubEditor.App"
              xmlns:local="using:SOE_PubEditor"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
+             <!-- Forces dark theme for consistent Clean Modern appearance -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
@@ -12,5 +12,6 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+        <StyleInclude Source="/Styles/Theme.axaml"/>
     </Application.Styles>
 </Application>
