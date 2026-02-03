@@ -17,20 +17,22 @@ A cross-platform editor for Endless Online pub files (EIF, ENF, ESF, ECF) with i
 - **Spell Effects** - View all 3 effect layers per spell
 
 ### Import/Export
-- **Export to BMP** - Export any graphic as a true 24-bit BMP file
-- **Import from BMP** - Import custom BMP graphics into EGF files
+- **Export to BMP** - Export any graphic as a true 24-bit BMP file (all platforms)
+- **Import from BMP** - Import custom BMP graphics into EGF files (Windows only)
 - **Batch Export** - Export all frames for NPCs or all layers for spells at once
 
 ## Requirements
 
 ### For Running
-- Windows x64 (self-contained builds include .NET runtime)
+- Windows, macOS, or Linux (self-contained builds include .NET runtime)
 - Endless Online GFX files (gfx001.egf - gfx025.egf)
 - Pub files to edit (dat001.eif, dtn001.enf, dsl001.esf, dat001.ecf)
 
 ### For Building
 - .NET 9.0 SDK
 - Any OS supported by .NET (Windows, macOS, Linux)
+
+> **Note:** GFX import (writing to EGF files) requires Windows PE API calls and is only available on Windows. All other features including pub editing, GFX preview, and GFX export work on all platforms.
 
 ## Installation
 
@@ -50,9 +52,22 @@ dotnet build
 
 # Run
 dotnet run
+```
 
-# Publish self-contained Windows build
+### Publishing Self-Contained Builds
+
+```bash
+# Windows x64
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64
+
+# macOS Apple Silicon (M1/M2/M3)
+dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true -o publish/osx-arm64
+
+# macOS Intel
+dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o publish/osx-x64
+
+# Linux x64
+dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o publish/linux-x64
 ```
 
 ## First-Time Setup
@@ -88,7 +103,9 @@ These settings are saved and can be changed later via **File → Settings**.
 4. Choose an output folder
 5. Graphics are saved as BMP files
 
-### Importing Graphics
+### Importing Graphics (Windows Only)
+
+> **Note:** GFX import requires Windows PE API calls and is not available on macOS or Linux.
 
 1. Prepare your BMP file (24-bit, any size)
 2. Right-click the graphic preview
