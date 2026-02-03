@@ -41,6 +41,20 @@ A cross-platform editor for Endless Online pub files (EIF, ENF, ESF, ECF) with i
 2. Extract to any folder
 3. Run `SOE_PubEditor.exe`
 
+### Pre-built macOS Release
+1. Download the latest release (arm64 for M1/M2/M3, x64 for Intel)
+2. Extract the `.app` bundle from the zip
+3. **Important:** macOS will block the unsigned app. To open it:
+   - Right-click the app → "Open" → click "Open" in the security dialog
+   - Or run in Terminal: `xattr -cr /path/to/EOPubGFX-arm64.app`
+4. Drag the app to your Applications folder
+
+### Pre-built Linux Release
+1. Download the latest release from the [Releases](https://github.com/Connor93/EOPubGFX/releases) page
+2. Extract to any folder
+3. Make executable: `chmod +x SOE_PubEditor`
+4. Run `./SOE_PubEditor`
+
 ### Building from Source
 ```bash
 # Clone the repository
