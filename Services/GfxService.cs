@@ -163,6 +163,29 @@ public class GfxService : IGfxService
         _cache.Clear();
     }
     
+    /// <summary>
+    /// Finds the next available doll graphic ID for a given equipment GFX type.
+    /// Scans existing resources and returns max + 1.
+    /// </summary>
+    public int GetNextAvailableDollGraphicId(GfxType type)
+    {
+        var existingIds = GetAvailableResourceIds(type);
+        if (existingIds.Count == 0)
+            return 1; // Start at 1 if empty (0 causes Windows PE resource issues)
+        return existingIds.Max() + 1;
+    }
+    
+    /// <summary>
+    /// Finds the next available inventory/ground graphic ID (for gfx023).
+    /// </summary>
+    public int GetNextAvailableItemGraphicId()
+    {
+        var existingIds = GetAvailableResourceIds(GfxType.Items);
+        if (existingIds.Count == 0)
+            return 1;
+        return existingIds.Max() + 1;
+    }
+    
     public List<int> GetAvailableResourceIds(GfxType type)
     {
         var ids = new List<int>();

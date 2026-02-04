@@ -147,11 +147,13 @@
                                     <StackPanel IsVisible="{Binding ShowEquipmentPreview}">
                                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
                                             <TextBlock Text="Equipment GFX" FontSize="11" Classes="Label"/>
+                                            <!-- Hide gender selector for weapons - they're imported to both male and female GFX files -->
                                             <ComboBox SelectedIndex="{Binding SelectedItem.Spec2}" 
+                                                      IsVisible="{Binding ShowGenderSelector}"
                                                       FontSize="11" Padding="4,2" MinWidth="70"
                                                       ToolTip.Tip="Gender of this equipment - determines which GFX file to use">
-                                                <ComboBoxItem Content="Female"/>
                                                 <ComboBoxItem Content="Male"/>
+                                                <ComboBoxItem Content="Female"/>
                                             </ComboBox>
                                         </StackPanel>
                                         <Button Click="OnEquipmentPreviewClick" Padding="0" HorizontalAlignment="Left"

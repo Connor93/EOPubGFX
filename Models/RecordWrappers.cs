@@ -191,17 +191,17 @@ public class ItemRecordWrapper : INotifyPropertyChanged
     
     /// <summary>
     /// Returns true if this equipment is for female characters.
-    /// Based on Spec2 value (0 = female, 1 = male) or name patterns.
+    /// Based on Spec2 value (0 = male/default, 1 = female) or name patterns.
     /// </summary>
     public bool IsFemaleEquipment
     {
         get
         {
-            // Spec2 == 0 indicates female equipment, Spec2 == 1 indicates male
-            if (Spec2 == 0) return true;
-            if (Spec2 == 1) return false;
+            // Spec2 == 1 indicates female equipment, Spec2 == 0 is male (default)
+            if (Spec2 == 1) return true;
+            if (Spec2 == 0) return false;
             
-            // Also check name patterns as fallback for items without Spec2 set
+            // Also check name patterns as fallback for items without Spec2 set correctly
             var name = Name ?? "";
             return name.Contains("(F)") || 
                    name.Contains("Female") || 

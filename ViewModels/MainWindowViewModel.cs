@@ -190,6 +190,11 @@ public partial class MainWindowViewModel : ViewModelBase
     // Equipment types that need the visual GFX picker (excludes accessories like rings, bracers, etc.)
     public bool ShowEquipmentPreview => SelectedItem != null && IsVisualEquipmentType(SelectedItem.Type);
     
+    // Gender selector is shown for equipment except weapons (weapons import to both male/female EGF files)
+    public bool ShowGenderSelector => SelectedItem != null && 
+        IsVisualEquipmentType(SelectedItem.Type) && 
+        SelectedItem.Type != ItemType.Weapon;
+    
     private static bool IsVisualEquipmentType(ItemType type) =>
         type == ItemType.Armor || type == ItemType.Weapon || 
         type == ItemType.Hat || type == ItemType.Boots || type == ItemType.Shield ||
@@ -221,6 +226,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(IsEquipmentType));
         OnPropertyChanged(nameof(ShowEquipmentPreview));
+        OnPropertyChanged(nameof(ShowGenderSelector));
         OnPropertyChanged(nameof(ShowWeaponStats));
         OnPropertyChanged(nameof(ShowDefenseStats));
         OnPropertyChanged(nameof(ShowStatBonuses));
@@ -238,7 +244,7 @@ public partial class MainWindowViewModel : ViewModelBase
     // Get the GFX type for equipment based on item type
     private static GfxType GetEquipmentGfxType(ItemType type, bool isFemale = false) => type switch
     {
-        ItemType.Weapon => GfxType.MaleWeapon,
+        ItemType.Weapon => isFemale ? GfxType.FemaleWeapon : GfxType.MaleWeapon,
         ItemType.Shield => GfxType.MaleBack,
         ItemType.Armor => isFemale ? GfxType.FemaleArmor : GfxType.MaleArmor,
         ItemType.Hat => isFemale ? GfxType.FemaleHat : GfxType.MaleHat,
@@ -903,7 +909,8 @@ public partial class MainWindowViewModel : ViewModelBase
         var newRecord = new EifRecord
         {
             Name = "New Item",
-            GraphicId = 1
+            GraphicId = 1,
+            Spec1 = 1  // Default doll graphic ID to avoid resource ID 0 issue
         };
         
         var wrapper = new ItemRecordWrapper(newRecord, Items.Count + 1);

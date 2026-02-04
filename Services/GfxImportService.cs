@@ -81,21 +81,39 @@ public class GfxImportService : IGfxImportService
         return PrepareEgfForModification(gfxType, outputGfxDirectory);
     }
     
-    public async Task<GfxImportResult> ImportItemGraphicsAsync(ItemRecordWrapper item, string inputFolder, string? outputGfxDirectory = null)
+    public async Task<GfxImportResult> ImportItemGraphicsAsync(
+        ItemRecordWrapper item, 
+        string inputFolder, 
+        string? outputGfxDirectory = null,
+        int? targetGraphicId = null,
+        int? targetDollGraphicId = null)
     {
         return await Task.Run(() =>
         {
             try
             {
+                // Use provided target IDs or fall back to item properties
+                var graphicId = targetGraphicId ?? item.GraphicId;
+                var dollGraphicId = targetDollGraphicId ?? item.Spec1;
+                
+                FileLogger.LogInfo($"=== GFX IMPORT START ===");
+                FileLogger.LogInfo($"Item: ID={item.Id}, Name='{item.Name}', Type={item.Type}");
+                FileLogger.LogInfo($"Using GraphicId={graphicId} (original: {item.GraphicId}), DollGraphicId={dollGraphicId} (original: {item.Spec1})");
+                FileLogger.LogInfo($"IsFemaleEquipment={item.IsFemaleEquipment}");
+                FileLogger.LogInfo($"Input folder: {inputFolder}");
+                FileLogger.LogInfo($"Output GFX directory: {outputGfxDirectory ?? "default from service"}");
+                
                 var filesImported = 0;
                 var errors = new List<string>();
                 
                 // Import inventory icon (gfx023)
                 var inventoryPath = Path.Combine(inputFolder, "inventory", "inventory_icon.bmp");
+                FileLogger.LogInfo($"Checking inventory path: {inventoryPath} (exists: {File.Exists(inventoryPath)})");
                 if (File.Exists(inventoryPath))
                 {
                     var egfPath = GetOutputEgfPath(GfxType.Items, outputGfxDirectory);
-                    var resourceId = (2 * item.GraphicId) + 100;
+                    var resourceId = (2 * graphicId) + 100;
+                    FileLogger.LogInfo($"Importing inventory icon to EGF: {egfPath}, ResourceId: {resourceId}");
                     if (ImportBmpToEgf(egfPath, resourceId, inventoryPath))
                         filesImported++;
                     else
@@ -107,7 +125,7 @@ public class GfxImportService : IGfxImportService
                 if (File.Exists(groundPath))
                 {
                     var egfPath = GetOutputEgfPath(GfxType.Items, outputGfxDirectory);
-                    var resourceId = (2 * item.GraphicId - 1) + 100;
+                    var resourceId = (2 * graphicId - 1) + 100;
                     if (ImportBmpToEgf(egfPath, resourceId, groundPath))
                         filesImported++;
                     else
@@ -116,13 +134,17 @@ public class GfxImportService : IGfxImportService
                 
                 // Import equipment graphics if applicable
                 var equipmentDir = Path.Combine(inputFolder, "equipment");
+                FileLogger.LogInfo($"Checking equipment dir: {equipmentDir} (exists: {Directory.Exists(equipmentDir)})");
                 if (Directory.Exists(equipmentDir))
                 {
-                    var (gfxType, _) = GetEquipmentGfxType(item.Type, item.Name);
+                    var (gfxType, typeName) = GetEquipmentGfxType(item.Type, item.IsFemaleEquipment);
+                    FileLogger.LogInfo($"Equipment GFX type determined: {gfxType} (typeName: {typeName})");
                     if (gfxType != GfxType.Items)
                     {
                         var egfPath = GetOutputEgfPath(gfxType, outputGfxDirectory);
+                        FileLogger.LogInfo($"Target EGF path: {egfPath} (exists: {File.Exists(egfPath)})");
                         var bmpFiles = Directory.GetFiles(equipmentDir, "*.bmp");
+                        FileLogger.LogInfo($"Found {bmpFiles.Length} BMP files in equipment folder");
                         
                         // For weapons, also get the female weapon EGF path
                         string? femaleWeaponEgfPath = null;
@@ -153,7 +175,7 @@ public class GfxImportService : IGfxImportService
                             
                             if (frame >= 0)
                             {
-                                var resourceId = GetEquipmentResourceId(item.Type, item.Spec1, frame);
+                                var resourceId = GetEquipmentResourceId(item.Type, dollGraphicId, frame);
                                 FileLogger.LogInfo($"GFX IMPORT: Importing equipment frame {frame} from {fileName} to resource {resourceId}");
                                 
                                 // Import to primary GFX file
@@ -185,22 +207,27 @@ public class GfxImportService : IGfxImportService
                 }
                 
                 var error = errors.Count > 0 ? string.Join("; ", errors) : null;
-                return new GfxImportResult(errors.Count == 0, filesImported, null, error);
+                return new GfxImportResult(errors.Count == 0, filesImported, graphicId, dollGraphicId, error);
             }
             catch (Exception ex)
             {
                 FileLogger.LogError($"GFX IMPORT ERROR: {ex.Message}");
-                return new GfxImportResult(false, 0, null, ex.Message);
+                return new GfxImportResult(false, 0, null, null, ex.Message);
             }
         });
     }
     
-    public async Task<GfxImportResult> ImportNpcGraphicsAsync(NpcRecordWrapper npc, string inputFolder, string? outputGfxDirectory = null)
+    public async Task<GfxImportResult> ImportNpcGraphicsAsync(
+        NpcRecordWrapper npc, 
+        string inputFolder, 
+        string? outputGfxDirectory = null,
+        int? targetGraphicId = null)
     {
         return await Task.Run(() =>
         {
             try
             {
+                var graphicId = targetGraphicId ?? npc.GraphicId;
                 var filesImported = 0;
                 var errors = new List<string>();
                 var egfPath = GetOutputEgfPath(GfxType.NPC, outputGfxDirectory);
@@ -214,7 +241,7 @@ public class GfxImportService : IGfxImportService
                     // Parse frame number from filename (e.g., "frame_01.bmp" -> 1)
                     if (fileName.StartsWith("frame_") && int.TryParse(fileName.Substring(6), out int frame))
                     {
-                        var resourceId = ((npc.GraphicId - 1) * 40) + frame + 100;
+                        var resourceId = ((graphicId - 1) * 40) + frame + 100;
                         if (ImportBmpToEgf(egfPath, resourceId, bmpFile))
                         {
                             filesImported++;
@@ -228,22 +255,27 @@ public class GfxImportService : IGfxImportService
                 }
                 
                 var error = errors.Count > 0 ? string.Join("; ", errors) : null;
-                return new GfxImportResult(errors.Count == 0, filesImported, null, error);
+                return new GfxImportResult(errors.Count == 0, filesImported, graphicId, null, error);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"GFX IMPORT ERROR: {ex.Message}");
-                return new GfxImportResult(false, 0, null, ex.Message);
+                return new GfxImportResult(false, 0, null, null, ex.Message);
             }
         });
     }
     
-    public async Task<GfxImportResult> ImportSpellGraphicsAsync(SpellRecordWrapper spell, string inputFolder, string? outputGfxDirectory = null)
+    public async Task<GfxImportResult> ImportSpellGraphicsAsync(
+        SpellRecordWrapper spell, 
+        string inputFolder, 
+        string? outputGfxDirectory = null,
+        int? targetGraphicId = null)
     {
         return await Task.Run(() =>
         {
             try
             {
+                var graphicId = targetGraphicId ?? spell.GraphicId;
                 var filesImported = 0;
                 var errors = new List<string>();
                 
@@ -259,7 +291,7 @@ public class GfxImportService : IGfxImportService
                         var fileName = Path.GetFileNameWithoutExtension(layerFile);
                         if (fileName.StartsWith("layer_") && int.TryParse(fileName.Substring(6), out int layer))
                         {
-                            var resourceId = ((spell.GraphicId - 1) * 3) + layer + 100;
+                            var resourceId = ((graphicId - 1) * 3) + layer + 100;
                             if (ImportBmpToEgf(egfPath, resourceId, layerFile))
                             {
                                 filesImported++;
@@ -291,12 +323,12 @@ public class GfxImportService : IGfxImportService
                 }
                 
                 var error = errors.Count > 0 ? string.Join("; ", errors) : null;
-                return new GfxImportResult(errors.Count == 0, filesImported, null, error);
+                return new GfxImportResult(errors.Count == 0, filesImported, graphicId, null, error);
             }
             catch (Exception ex)
             {
                 FileLogger.LogError("GFX IMPORT ERROR (Spell)", ex);
-                return new GfxImportResult(false, 0, null, ex.Message);
+                return new GfxImportResult(false, 0, null, null, ex.Message);
             }
         });
     }
@@ -383,16 +415,11 @@ public class GfxImportService : IGfxImportService
         }
     }
     
-    private static (GfxType gfxType, string name) GetEquipmentGfxType(ItemType type, string itemName)
+    private static (GfxType gfxType, string name) GetEquipmentGfxType(ItemType type, bool isFemale)
     {
-        var isFemale = itemName.Contains("(F)") || 
-                       itemName.Contains("Female") || 
-                       itemName.Contains(" F)") ||
-                       itemName.EndsWith(" F");
-        
         return type switch
         {
-            ItemType.Weapon => (GfxType.MaleWeapon, "weapon"),
+            ItemType.Weapon => (isFemale ? GfxType.FemaleWeapon : GfxType.MaleWeapon, "weapon"),
             ItemType.Shield => (GfxType.MaleBack, "shield"),
             ItemType.Armor => (isFemale ? GfxType.FemaleArmor : GfxType.MaleArmor, "armor"),
             ItemType.Hat => (isFemale ? GfxType.FemaleHat : GfxType.MaleHat, "hat"),
@@ -403,13 +430,18 @@ public class GfxImportService : IGfxImportService
     
     private static int GetEquipmentResourceId(ItemType type, int dollGraphic, int frame)
     {
+        // These formulas must match GfxExportService exactly:
+        // Weapons: DollGraphic * 100 + frame (frame starts at 1)
+        // Armor:   (DollGraphic - 1) * 50 + 101 + frame
+        // Boots:   (DollGraphic - 1) * 40 + 101 + frame
+        // Hats:    (DollGraphic - 1) * 10 + 101 + frame
         return type switch
         {
             ItemType.Weapon => (dollGraphic * 100) + frame,
-            ItemType.Armor => ((dollGraphic - 1) * 50) + 100 + frame,
-            ItemType.Boots => ((dollGraphic - 1) * 40) + 100 + frame,
-            ItemType.Hat => ((dollGraphic - 1) * 10) + 100 + frame,
-            _ => ((dollGraphic - 1) * 50) + 100 + frame // Default to armor formula
+            ItemType.Armor => ((dollGraphic - 1) * 50) + 101 + frame,
+            ItemType.Boots => ((dollGraphic - 1) * 40) + 101 + frame,
+            ItemType.Hat => ((dollGraphic - 1) * 10) + 101 + frame,
+            _ => ((dollGraphic - 1) * 50) + 101 + frame // Default to armor formula
         };
     }
 }
@@ -431,14 +463,28 @@ public class GfxImportService : IGfxImportService
     public string PrepareEgfForModification(GfxType gfxType, string outputGfxDirectory)
         => throw new PlatformNotSupportedException("GFX import requires Windows");
     
-    public Task<GfxImportResult> ImportItemGraphicsAsync(ItemRecordWrapper item, string inputFolder, string? outputGfxDirectory = null)
-        => Task.FromResult(new GfxImportResult(false, 0, null, "GFX import requires Windows"));
+    public Task<GfxImportResult> ImportItemGraphicsAsync(
+        ItemRecordWrapper item, 
+        string inputFolder, 
+        string? outputGfxDirectory = null,
+        int? targetGraphicId = null,
+        int? targetDollGraphicId = null)
+        => Task.FromResult(new GfxImportResult(false, 0, null, null, "GFX import requires Windows"));
     
-    public Task<GfxImportResult> ImportNpcGraphicsAsync(NpcRecordWrapper npc, string inputFolder, string? outputGfxDirectory = null)
-        => Task.FromResult(new GfxImportResult(false, 0, null, "GFX import requires Windows"));
+    public Task<GfxImportResult> ImportNpcGraphicsAsync(
+        NpcRecordWrapper npc, 
+        string inputFolder, 
+        string? outputGfxDirectory = null,
+        int? targetGraphicId = null)
+        => Task.FromResult(new GfxImportResult(false, 0, null, null, "GFX import requires Windows"));
     
-    public Task<GfxImportResult> ImportSpellGraphicsAsync(SpellRecordWrapper spell, string inputFolder, string? outputGfxDirectory = null)
-        => Task.FromResult(new GfxImportResult(false, 0, null, "GFX import requires Windows"));
+    public Task<GfxImportResult> ImportSpellGraphicsAsync(
+        SpellRecordWrapper spell, 
+        string inputFolder, 
+        string? outputGfxDirectory = null,
+        int? targetGraphicId = null)
+        => Task.FromResult(new GfxImportResult(false, 0, null, null, "GFX import requires Windows"));
 }
 
 #endif
+

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SOE_PubEditor.Views.ImportModeDialog"
+        Title="Import Graphics"
+        Width="400" Height="280"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+    
+    <Window.Styles>
+        <Style Selector="RadioButton">
+            <Setter Property="Margin" Value="0,8"/>
+        </Style>
+        <Style Selector="TextBlock.description">
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="20,4,0,0"/>
+        </Style>
+    </Window.Styles>
+    
+    <Border Padding="20">
+        <DockPanel>
+            <!-- Header -->
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <TextBlock Text="Import Graphics" FontSize="16" FontWeight="SemiBold"/>
+                <TextBlock Text="This item already has graphics assigned." 
+                           Foreground="#888" Margin="0,4,0,0"/>
+            </StackPanel>
+            
+            <!-- Buttons -->
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" 
+                        HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
+                <Button Content="Cancel" Width="80" Click="OnCancel"/>
+                <Button x:Name="ImportButton" Content="Import" Width="80" 
+                        Classes="accent" Click="OnImport"/>
+            </StackPanel>
+            
+            <!-- Options -->
+            <StackPanel VerticalAlignment="Center">
+                <RadioButton x:Name="ReplaceOption" GroupName="ImportMode" IsChecked="True">
+                    <StackPanel>
+                        <TextBlock Text="Replace existing graphics" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="ReplaceDescription" Classes="description"
+                                   Text="Overwrite graphics at current slot"/>
+                    </StackPanel>
+                </RadioButton>
+                
+                <RadioButton x:Name="AppendOption" GroupName="ImportMode">
+                    <StackPanel>
+                        <TextBlock Text="Add as new graphics" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="AppendDescription" Classes="description"
+                                   Text="Create at next available slot"/>
+                    </StackPanel>
+                </RadioButton>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>

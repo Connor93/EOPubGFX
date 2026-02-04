@@ -395,7 +395,74 @@ public partial class MainWindow : Window
             return;
         }
         
-        FileLogger.LogInfo($"Importing graphics for item: {vm.SelectedItem.Name} (GraphicId={vm.SelectedItem.GraphicId})");
+        var item = vm.SelectedItem;
+        FileLogger.LogInfo($"Importing graphics for item: {item.Name} (GraphicId={item.GraphicId}, Spec1={item.Spec1})");
+        
+        // Determine if this is equipment (needs both inventory and doll graphics)
+        var isEquipment = item.Type == Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Weapon ||
+                          item.Type == Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Shield ||
+                          item.Type == Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Armor ||
+                          item.Type == Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Hat ||
+                          item.Type == Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Boots;
+        
+        // Determine if item has existing graphics
+        var hasExistingGraphics = item.GraphicId > 0;
+        var hasExistingDollGraphics = isEquipment && item.Spec1 > 0;
+        
+        // Prepare target IDs
+        int? targetGraphicId = null;
+        int? targetDollGraphicId = null;
+        
+        // For items with existing graphics, show import mode dialog
+        if (hasExistingGraphics || hasExistingDollGraphics)
+        {
+            // Get next available IDs for display in dialog
+            var nextGraphicId = vm.GfxService.GetNextAvailableItemGraphicId();
+            GfxType? equipGfxType = isEquipment ? GetEquipmentGfxType(item.Type) : null;
+            var nextDollId = equipGfxType.HasValue ? vm.GfxService.GetNextAvailableDollGraphicId(equipGfxType.Value) : 0;
+            
+            var dialog = new ImportModeDialog(
+                currentSlot: hasExistingGraphics ? item.GraphicId : item.Spec1,
+                nextAvailableSlot: hasExistingGraphics ? nextGraphicId : nextDollId,
+                entityType: "Item"
+            );
+            
+            var mode = await dialog.ShowDialog<ImportMode>(this);
+            
+            if (mode == ImportMode.Cancel)
+            {
+                FileLogger.LogInfo("OnImportItemGraphics: User canceled import mode dialog");
+                return;
+            }
+            
+            if (mode == ImportMode.Replace)
+            {
+                // Use existing IDs
+                FileLogger.LogInfo("OnImportItemGraphics: User chose Replace mode");
+                targetGraphicId = hasExistingGraphics ? item.GraphicId : nextGraphicId;
+                targetDollGraphicId = isEquipment ? (hasExistingDollGraphics ? item.Spec1 : nextDollId) : null;
+            }
+            else // Append
+            {
+                // Use next available IDs
+                FileLogger.LogInfo("OnImportItemGraphics: User chose Append mode");
+                targetGraphicId = nextGraphicId;
+                targetDollGraphicId = isEquipment ? nextDollId : null;
+            }
+        }
+        else
+        {
+            // New item with no graphics - auto-append to next available slots
+            FileLogger.LogInfo("OnImportItemGraphics: New item, auto-appending to next available slots");
+            targetGraphicId = vm.GfxService.GetNextAvailableItemGraphicId();
+            if (isEquipment)
+            {
+                var equipGfxType = GetEquipmentGfxType(item.Type);
+                targetDollGraphicId = vm.GfxService.GetNextAvailableDollGraphicId(equipGfxType);
+            }
+        }
+        
+        FileLogger.LogInfo($"Target IDs: GraphicId={targetGraphicId}, DollGraphicId={targetDollGraphicId}");
         
         // First, select the input folder with BMP files
         var inputFolder = await SelectExportFolderAsync("Select Folder Containing BMP Files");
@@ -421,11 +488,24 @@ public partial class MainWindow : Window
         var importService = new GfxImportService(vm.GfxService);
         FileLogger.LogInfo($"ImportService.IsAvailable: {importService.IsAvailable}");
         
-        var result = await importService.ImportItemGraphicsAsync(vm.SelectedItem, inputFolder, outputGfxDir);
+        var result = await importService.ImportItemGraphicsAsync(
+            vm.SelectedItem, inputFolder, outputGfxDir, targetGraphicId, targetDollGraphicId);
         
         if (result.Success)
         {
             FileLogger.LogInfo($"GFX IMPORT: Successfully imported {result.FilesImported} files");
+            
+            // Update item properties with assigned IDs
+            if (result.AssignedGraphicId.HasValue && result.AssignedGraphicId.Value != item.GraphicId)
+            {
+                FileLogger.LogInfo($"Updating item GraphicId: {item.GraphicId} -> {result.AssignedGraphicId.Value}");
+                item.GraphicId = result.AssignedGraphicId.Value;
+            }
+            if (result.AssignedDollGraphicId.HasValue && isEquipment && result.AssignedDollGraphicId.Value != item.Spec1)
+            {
+                FileLogger.LogInfo($"Updating item Spec1: {item.Spec1} -> {result.AssignedDollGraphicId.Value}");
+                item.Spec1 = result.AssignedDollGraphicId.Value;
+            }
             
             // Clear GFX cache and refresh the view so user sees the updated graphics
             vm.GfxService.ClearCache();
@@ -444,6 +524,19 @@ public partial class MainWindow : Window
         }
     }
     
+    private static GfxType GetEquipmentGfxType(Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType itemType)
+    {
+        return itemType switch
+        {
+            Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Weapon => GfxType.MaleWeapon, // Default to male for detection
+            Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Shield => GfxType.MaleBack,
+            Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Armor => GfxType.MaleArmor,
+            Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Hat => GfxType.MaleHat,
+            Moffat.EndlessOnline.SDK.Protocol.Pub.ItemType.Boots => GfxType.MaleBoots,
+            _ => GfxType.Items
+        };
+    }
+    
     private async void OnImportNpcGraphics(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         FileLogger.LogInfo("OnImportNpcGraphics started");
@@ -453,7 +546,50 @@ public partial class MainWindow : Window
             return;
         }
         
-        FileLogger.LogInfo($"Importing graphics for NPC: {vm.SelectedNpc.Name} (GraphicId={vm.SelectedNpc.GraphicId})");
+        var npc = vm.SelectedNpc;
+        FileLogger.LogInfo($"Importing graphics for NPC: {npc.Name} (GraphicId={npc.GraphicId})");
+        
+        // Determine target graphic ID
+        int? targetGraphicId = null;
+        var hasExistingGraphics = npc.GraphicId > 0;
+        
+        if (hasExistingGraphics)
+        {
+            var nextGraphicId = vm.GfxService.GetNextAvailableDollGraphicId(GfxType.NPC);
+            
+            var dialog = new ImportModeDialog(
+                currentSlot: npc.GraphicId,
+                nextAvailableSlot: nextGraphicId,
+                entityType: "NPC"
+            );
+            
+            var mode = await dialog.ShowDialog<ImportMode>(this);
+            
+            if (mode == ImportMode.Cancel)
+            {
+                FileLogger.LogInfo("OnImportNpcGraphics: User canceled import mode dialog");
+                return;
+            }
+            
+            if (mode == ImportMode.Replace)
+            {
+                FileLogger.LogInfo("OnImportNpcGraphics: User chose Replace mode");
+                targetGraphicId = npc.GraphicId;
+            }
+            else // Append
+            {
+                FileLogger.LogInfo("OnImportNpcGraphics: User chose Append mode");
+                targetGraphicId = nextGraphicId;
+            }
+        }
+        else
+        {
+            // New NPC - auto-append
+            FileLogger.LogInfo("OnImportNpcGraphics: New NPC, auto-appending to next available slot");
+            targetGraphicId = vm.GfxService.GetNextAvailableDollGraphicId(GfxType.NPC);
+        }
+        
+        FileLogger.LogInfo($"Target GraphicId: {targetGraphicId}");
         
         // First, select the input folder with BMP files
         var inputFolder = await SelectExportFolderAsync("Select Folder Containing BMP Files");
@@ -466,11 +602,18 @@ public partial class MainWindow : Window
         var outputGfxDir = string.IsNullOrEmpty(outputChoice) ? null : outputChoice;
         
         var importService = new GfxImportService(vm.GfxService);
-        var result = await importService.ImportNpcGraphicsAsync(vm.SelectedNpc, inputFolder, outputGfxDir);
+        var result = await importService.ImportNpcGraphicsAsync(npc, inputFolder, outputGfxDir, targetGraphicId);
         
         if (result.Success)
         {
             FileLogger.LogInfo($"GFX IMPORT (NPC): Successfully imported {result.FilesImported} files");
+            
+            // Update NPC GraphicId if changed
+            if (result.AssignedGraphicId.HasValue && result.AssignedGraphicId.Value != npc.GraphicId)
+            {
+                FileLogger.LogInfo($"Updating NPC GraphicId: {npc.GraphicId} -> {result.AssignedGraphicId.Value}");
+                npc.GraphicId = result.AssignedGraphicId.Value;
+            }
             
             // Clear GFX cache and refresh the view
             vm.GfxService.ClearCache();
@@ -496,7 +639,50 @@ public partial class MainWindow : Window
             return;
         }
         
-        FileLogger.LogInfo($"Importing graphics for Spell: {vm.SelectedSpell.Name} (GraphicId={vm.SelectedSpell.GraphicId})");
+        var spell = vm.SelectedSpell;
+        FileLogger.LogInfo($"Importing graphics for Spell: {spell.Name} (GraphicId={spell.GraphicId})");
+        
+        // Determine target graphic ID
+        int? targetGraphicId = null;
+        var hasExistingGraphics = spell.GraphicId > 0;
+        
+        if (hasExistingGraphics)
+        {
+            var nextGraphicId = vm.GfxService.GetNextAvailableDollGraphicId(GfxType.Spells);
+            
+            var dialog = new ImportModeDialog(
+                currentSlot: spell.GraphicId,
+                nextAvailableSlot: nextGraphicId,
+                entityType: "Spell"
+            );
+            
+            var mode = await dialog.ShowDialog<ImportMode>(this);
+            
+            if (mode == ImportMode.Cancel)
+            {
+                FileLogger.LogInfo("OnImportSpellGraphics: User canceled import mode dialog");
+                return;
+            }
+            
+            if (mode == ImportMode.Replace)
+            {
+                FileLogger.LogInfo("OnImportSpellGraphics: User chose Replace mode");
+                targetGraphicId = spell.GraphicId;
+            }
+            else // Append
+            {
+                FileLogger.LogInfo("OnImportSpellGraphics: User chose Append mode");
+                targetGraphicId = nextGraphicId;
+            }
+        }
+        else
+        {
+            // New spell - auto-append
+            FileLogger.LogInfo("OnImportSpellGraphics: New spell, auto-appending to next available slot");
+            targetGraphicId = vm.GfxService.GetNextAvailableDollGraphicId(GfxType.Spells);
+        }
+        
+        FileLogger.LogInfo($"Target GraphicId: {targetGraphicId}");
         
         // First, select the input folder with BMP files
         var inputFolder = await SelectExportFolderAsync("Select Folder Containing BMP Files");
@@ -509,11 +695,18 @@ public partial class MainWindow : Window
         var outputGfxDir = string.IsNullOrEmpty(outputChoice) ? null : outputChoice;
         
         var importService = new GfxImportService(vm.GfxService);
-        var result = await importService.ImportSpellGraphicsAsync(vm.SelectedSpell, inputFolder, outputGfxDir);
+        var result = await importService.ImportSpellGraphicsAsync(spell, inputFolder, outputGfxDir, targetGraphicId);
         
         if (result.Success)
         {
             FileLogger.LogInfo($"GFX IMPORT (Spell): Successfully imported {result.FilesImported} files");
+            
+            // Update spell GraphicId if changed
+            if (result.AssignedGraphicId.HasValue && result.AssignedGraphicId.Value != spell.GraphicId)
+            {
+                FileLogger.LogInfo($"Updating Spell GraphicId: {spell.GraphicId} -> {result.AssignedGraphicId.Value}");
+                spell.GraphicId = (short)result.AssignedGraphicId.Value;
+            }
             
             // Clear GFX cache and refresh the view
             vm.GfxService.ClearCache();

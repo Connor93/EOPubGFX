@@ -91,4 +91,18 @@ public interface IGfxService
     /// <param name="frameWidth">Optional frame width. If not specified, uses the height (assumes square frames).</param>
     /// <returns>A new bitmap containing only the first frame.</returns>
     Bitmap? ExtractFirstFrame(Bitmap? spritesheet, int? frameWidth = null);
+    
+    /// <summary>
+    /// Finds the next available doll graphic ID for a given equipment GFX type.
+    /// Scans existing resources and returns max + 1.
+    /// </summary>
+    /// <param name="type">The equipment GFX file type.</param>
+    /// <returns>The next available doll graphic ID.</returns>
+    int GetNextAvailableDollGraphicId(GfxType type);
+    
+    /// <summary>
+    /// Finds the next available inventory/ground graphic ID (for gfx023).
+    /// </summary>
+    /// <returns>The next available item graphic ID.</returns>
+    int GetNextAvailableItemGraphicId();
 }
